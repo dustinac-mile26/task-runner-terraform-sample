@@ -1,0 +1,51 @@
+set shell := ["bash", "-euo", "pipefail", "-c"]
+set positional-arguments
+
+organization := "myorganization"
+deploy_env := env("DEPLOY_ENV", "development")
+terraform_project := env("TF_PROJECT", "terraform-state")
+build_directory := "/tmp/" + organization + "." + deploy_env + ".build"
+terraform_directory := ".." / "terraform" / terraform_project
+variables_file := ".." / "env" / deploy_env / terraform_project / "variables.tfvars"
+settings_file := ".." / "env" / deploy_env / terraform_project / "settings.sh"
+bucket_prefix := env("TF_REMOTE_STATE_BUCKET_PREFIX", "")
+bucket_name := bucket_prefix + "-" + deploy_env
+display_bucket_prefix := if bucket_prefix != "" { bucket_prefix } else { "<empty>" }
+bucket_arg := if env("NO_BUCKET", "") == "" { "-backend-config=bucket=" + bucket_name } else { "" }
+upgrade_arg := if env("UPGRADE", "") != "" { "-upgrade" } else { "" }
+migrate_arg := if env("MIGRATE", "") != "" { "-migrate-state" } else { "" }
+target_arg := if env("TARGET", "") != "" { "-target " + env("TARGET", "") } else { "" }
+update_arg := if env("UPDATE", "") != "" { "-update" } else { "" }
+
+default:
+  @just --justfile justfile.inline --list
+
+help:
+  @just --justfile justfile.inline --list
+
+clean:
+  rm -rf {{build_directory}}
+
+temp-create:
+  @temp_root="$$(umask 077 && mktemp -d /tmp/{{organization}}.{{deploy_env}}.XXXXXXXX)"; mkdir -p {{build_directory}}; printf '%s\n' "$$temp_root" > {{build_directory}}/temp_root; echo "Using temp directory: $$temp_root"
+
+temp-delete:
+  @if [[ -f {{build_directory}}/temp_root ]]; then read -r temp_root < {{build_directory}}/temp_root; rm -rfv "$$temp_root"; rm -f {{build_directory}}/temp_root; elif [[ -n "${TEMP_ROOT:-}" ]]; then rm -rfv "${TEMP_ROOT}"; else echo "No temp directory recorded. Run temp-create first or set TEMP_ROOT." >&2; exit 1; fi
+
+check:
+  @if [[ -n "${FORCE:-}" ]]; then echo "Forcing..."; exit 0; fi; echo "Are you sure? [NO/yes]:"; read -r answer; if [[ "$$answer" != "yes" ]]; then echo "Must answer 'yes' to proceed." >&2; exit 1; fi
+
+env-check:
+  @echo "Using DEPLOY_ENV: {{deploy_env}}."
+  @echo "Sleeping 2s before continuing... Control-C now to abort!"
+  @sleep 2
+
+context:
+  @printf 'env:          %s\n' '{{deploy_env}}'
+  @printf 'project:      %s\n' '{{terraform_project}}'
+  @printf 'terraform:    %s\n' '{{terraform_directory}}'
+  @printf 'variables:    %s\n' '{{variables_file}}'
+  @printf 'settings:     %s\n' '{{settings_file}}'
+  @printf 'bucket-prefix:%s\n' '{{display_bucket_prefix}}'
+
+import 'terraform.inline.just'

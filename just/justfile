@@ -1,0 +1,118 @@
+set shell := ["bash", "-euo", "pipefail", "-c"]
+set positional-arguments
+
+env := "development"
+project := "terraform-state"
+
+# List available recipes
+default:
+  @just --list
+
+# List available recipes
+help:
+  @just --list
+
+# Show the active env and project
+context:
+  #!/usr/bin/env bash
+  source ./lib/terraform.sh
+  tf_use_context '{{env}}' '{{project}}'
+  tf_print_context
+
+# Initialize terraform against the configured backend
+init *args:
+  #!/usr/bin/env bash
+  source ./lib/terraform.sh
+  tf_use_context '{{env}}' '{{project}}'
+  tf_init "$@"
+
+# Initialize terraform before remote state exists
+bootstrap-init *args:
+  #!/usr/bin/env bash
+  source ./lib/terraform.sh
+  tf_use_context '{{env}}' '{{project}}'
+  tf_bootstrap_init "$@"
+
+# Initialize terraform and migrate state to the remote backend
+migrate-init *args:
+  #!/usr/bin/env bash
+  source ./lib/terraform.sh
+  tf_use_context '{{env}}' '{{project}}'
+  tf_migrate_init "$@"
+
+# Create a new terraform workspace
+workspace-create *args:
+  #!/usr/bin/env bash
+  source ./lib/terraform.sh
+  tf_use_context '{{env}}' '{{project}}'
+  tf_workspace_create "$@"
+
+# Run terraform plan
+plan *args:
+  #!/usr/bin/env bash
+  source ./lib/terraform.sh
+  tf_use_context '{{env}}' '{{project}}'
+  tf_plan "$@"
+
+# Run terraform plan before remote state exists
+bootstrap-plan *args:
+  #!/usr/bin/env bash
+  source ./lib/terraform.sh
+  tf_use_context '{{env}}' '{{project}}'
+  tf_bootstrap_plan "$@"
+
+# Run terraform destroy plan
+deplan *args:
+  #!/usr/bin/env bash
+  source ./lib/terraform.sh
+  tf_use_context '{{env}}' '{{project}}'
+  tf_deplan "$@"
+
+# Run terraform plan and apply
+apply *args:
+  #!/usr/bin/env bash
+  source ./lib/terraform.sh
+  tf_use_context '{{env}}' '{{project}}'
+  tf_apply "$@"
+
+# Run terraform plan and apply before remote state exists
+bootstrap-apply *args:
+  #!/usr/bin/env bash
+  source ./lib/terraform.sh
+  tf_use_context '{{env}}' '{{project}}'
+  tf_bootstrap_apply "$@"
+
+# Import a terraform resource
+import resource resourceid:
+  #!/usr/bin/env bash
+  source ./lib/terraform.sh
+  tf_use_context '{{env}}' '{{project}}'
+  tf_import "$1" "$2"
+
+# Run terraform state
+state *args:
+  #!/usr/bin/env bash
+  source ./lib/terraform.sh
+  tf_use_context '{{env}}' '{{project}}'
+  tf_state "$@"
+
+# Run arbitrary terraform commands
+exec *args:
+  #!/usr/bin/env bash
+  source ./lib/terraform.sh
+  tf_use_context '{{env}}' '{{project}}'
+  tf_exec "$@"
+
+# Destroy terraform resources
+destroy *args:
+  #!/usr/bin/env bash
+  source ./lib/terraform.sh
+  tf_use_context '{{env}}' '{{project}}'
+  tf_destroy "$@"
+
+# Clean terraform working files
+clean:
+  #!/usr/bin/env bash
+  source ./lib/terraform.sh
+  tf_use_context '{{env}}' '{{project}}'
+  tf_clean
